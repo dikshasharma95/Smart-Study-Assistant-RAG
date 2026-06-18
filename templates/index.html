@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Study Assistant</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Smart Study Assistant (LLM + RAG)</h1>
+    <p class="subtitle">Upload your notes and ask questions from your own material.</p>
+
+    <section class="card">
+      <h2>1) Upload Study Material</h2>
+      <form id="uploadForm">
+        <input type="file" id="fileInput" accept=".pdf,.docx,.txt" required />
+        <button type="submit">Upload & Index</button>
+      </form>
+      <p id="uploadStatus" class="status"></p>
+    </section>
+
+    <section class="card">
+      <h2>2) Ask Questions</h2>
+      <form id="askForm">
+        <textarea id="questionInput" placeholder="Ask a question from uploaded material..." required></textarea>
+        <div class="row">
+          <label for="answerMode">Answer style:</label>
+          <select id="answerMode">
+            <option value="detailed" selected>Detailed</option>
+            <option value="short">Short</option>
+          </select>
+          <button type="submit">Ask</button>
+        </div>
+      </form>
+      <div id="chatBox" class="chat-box"></div>
+    </section>
+
+    <section class="card">
+      <h2>3) Summarize / Quiz</h2>
+      <form id="summaryForm" class="inline-form">
+        <input id="summaryTopic" placeholder="Topic or chapter name" required />
+        <button type="submit">Summarize Topic</button>
+      </form>
+      <pre id="summaryOutput" class="output"></pre>
+
+      <form id="quizForm" class="inline-form">
+        <input id="quizTopic" placeholder="Topic for quiz" required />
+        <input id="quizCount" type="number" min="1" max="10" value="5" />
+        <button type="submit">Generate Quiz</button>
+      </form>
+      <pre id="quizOutput" class="output"></pre>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
