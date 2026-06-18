@@ -3,9 +3,8 @@ uvicorn[standard]
 python-multipart
 jinja2
 groq
-sentence-transformers
-chromadb
+chromadb[default]
 pypdf
 python-docx
 python-dotenv
- 
+

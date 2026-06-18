@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import Any
 
 import chromadb
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from docx import Document
 from groq import Groq
 from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
 
 from database import save_document
 
@@ -26,11 +26,12 @@ class RAGService:
         if not api_key or api_key in {"your_groq_api_key_here", "gsk_xxxxxxxxxxxxxxxx"}:
             raise ValueError("GROQ_API_KEY is missing. Add it to your .env file.")
         self.groq = Groq(api_key=api_key)
-        print("Loading embedding model...")
-        self.embed_model = SentenceTransformer("all-MiniLM-L6-v2")
         CHROMA_DIR.mkdir(parents=True, exist_ok=True)
         self.client = chromadb.PersistentClient(path=str(CHROMA_DIR))
-        self.collection = self.client.get_or_create_collection(name=COLLECTION_NAME)
+        self.embed_fn = DefaultEmbeddingFunction()
+        self.collection = self.client.get_or_create_collection(
+            name=COLLECTION_NAME, embedding_function=self.embed_fn
+        )
 
     def parse_file(self, file_path: Path, file_type: str) -> list[dict[str, Any]]:
         if file_type == ".pdf":
@@ -73,9 +74,6 @@ class RAGService:
             start = max(end - overlap, start + 1)
         return chunks
 
-    def _embed(self, texts: list[str]) -> list[list[float]]:
-        return self.embed_model.encode(texts, show_progress_bar=False).tolist()
-
     def _chat(self, prompt: str, temperature: float = 0.2) -> str:
         completion = self.groq.chat.completions.create(
             model=CHAT_MODEL,
@@ -112,16 +110,14 @@ class RAGService:
                     "chunk_index": idx,
                 })
 
-        embeddings = self._embed(all_texts)
-        self.collection.add(ids=ids, documents=all_texts, metadatas=metadatas, embeddings=embeddings)
+        self.collection.add(ids=ids, documents=all_texts, metadatas=metadatas)
 
         uploaded_at = datetime.now(timezone.utc).isoformat()
         save_document(file_name=file_name, file_type=ext, uploaded_at=uploaded_at, total_chunks=len(all_texts))
         return {"file_name": file_name, "chunks_indexed": len(all_texts)}
 
     def retrieve(self, question: str, k: int = 5) -> list[dict[str, Any]]:
-        query_vector = self._embed([question])[0]
-        result = self.collection.query(query_embeddings=[query_vector], n_results=k)
+        result = self.collection.query(query_texts=[question], n_results=k)
 
         docs = result.get("documents", [[]])[0]
         metas = result.get("metadatas", [[]])[0]
